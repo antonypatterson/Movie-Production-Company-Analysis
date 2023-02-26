@@ -2,11 +2,12 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 
-class ProductionCompanyIMBD:
-    def __init__(self, name="", url="", id=""):
+class ProductionCompanyIMDB:
+    def __init__(self, name="", url="", id="", average_weighting=""):
         self._name = name
         self._company_url = url
         self._company_id = id
+        self._average_rating = average_weighting
 
     def get_average_rating(self, export_csv=False):
         #only calls "private" method if company id not already assigned and self._name is already assigned
@@ -30,8 +31,10 @@ class ProductionCompanyIMBD:
             start = 1
             num_movies_tag = soup.find('span', class_='desc').text
             num_movies = num_movies_tag.split(' of ')[-1].split(' titles')[0].replace(',', '')
+            print("num movies are " + num_movies)
+            num_movies_testDummy = 50
             
-            while start <= num_movies:  
+            while start <= num_movies_testDummy:  
                 query_string = f"?companies={self._company_id}&start={start}"
                 response = requests.get(base_url + query_string, headers=headers)
 
@@ -56,9 +59,16 @@ class ProductionCompanyIMBD:
                 # increase start index by 50 for the next page
                 start += 50
 
-        if export_csv:
-            df.to_csv(f"{self._name}_titles_{1}_to_{start+49}.csv", index=False)
+            self._average_rating = df["title"].mean()
 
+            if export_csv:
+                df.to_csv(f"{self._name}_titles_1_to_{start+49}.csv", index=False)
+
+        elif export_csv:
+            print("You have defined export_csv as true, but the get_average loops were not run as this object instance already has been run. \n "
+                  "Please use the clear_average_weighting() then get_average_rating() methods to re-run the calculation and export")
+
+        # whether run for first time or already set and re-running, still returns the average rating
         return self._average_rating
 
     def __search_by_keyword(self, keyword):
@@ -82,7 +92,8 @@ class ProductionCompanyIMBD:
         return self
     
     
-        
+    def clear_average_weighting(self):
+        self._average_rating = ""  
 
     @property
     def name(self):
